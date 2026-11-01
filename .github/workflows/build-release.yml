@@ -25,20 +25,17 @@ jobs:
         java-version: '21'
         cache: 'gradle'
 
-    - name: Setup Android SDK (already installed)
-      run: |
-        echo "ANDROID_HOME: $ANDROID_HOME"
-        echo "ANDROID_NDK: $ANDROID_NDK"
-        ls -la $ANDROID_HOME/ndk/ || echo "NDK not in default location"
+    - name: Setup ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ${{ github.job }}-${{ matrix.os }}
+        max-size: 2G
 
     - name: Install build dependencies
       run: |
         sudo apt-get update -qq
-        sudo apt-get install -y glslang-tools
+        sudo apt-get install -y glslang-tools ninja-build
         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "cmake;4.1.0" || true
-
-    - name: Verify glslangValidator
-      run: which glslangValidator && glslangValidator --version
 
     - name: Make gradlew executable
       run: chmod +x src/android/gradlew
@@ -52,32 +49,28 @@ jobs:
         ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
         ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/27.0.12077973
         ANDROID_NDK: /usr/local/lib/android/sdk/ndk/27.0.12077973
+        CMAKE_C_COMPILER_LAUNCHER: ccache
+        CMAKE_CXX_COMPILER_LAUNCHER: ccache
 
-    - name: Sign APK
+    - name: Sign APK with jarsigner
       working-directory: src/android/app/build/outputs/apk/mainline/release
       run: |
         # Generate keystore
         keytool -genkey -v -keystore release.keystore \
           -alias eden_key -keyalg RSA -keysize 4096 -validity 10000 \
-          -storepass ${{ secrets.KEYSTORE_PASSWORD || 'EdenSecure2026!' }} \
-          -keypass ${{ secrets.KEY_PASSWORD || 'EdenSecure2026!' }} \
+          -storepass "EdenSecure2026!" \
+          -keypass "EdenSecure2026!" \
           -dname "CN=Eden SX2A, OU=Development, O=Eden Project, L=Madrid, ST=Madrid, C=ES"
 
-        # Sign APK
-        $ANDROID_HOME/build-tools/*/apksigner sign \
-          --ks release.keystore \
-          --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD || 'EdenSecure2026!' }} \
-          --key-pass pass:${{ secrets.KEY_PASSWORD || 'EdenSecure2026!' }} \
-          --ks-key-alias eden_key \
-          --out app-mainline-release-signed.apk \
-          app-mainline-release-unsigned.apk || \
-        java -jar $ANDROID_HOME/build-tools/*/lib/apksigner.jar sign \
-          --ks release.keystore \
-          --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD || 'EdenSecure2026!' }} \
-          --key-pass pass:${{ secrets.KEY_PASSWORD || 'EdenSecure2026!' }} \
-          --ks-key-alias eden_key \
-          --out app-mainline-release-signed.apk \
-          app-mainline-release-unsigned.apk
+        # Sign with jarsigner (more reliable)
+        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+          -keystore release.keystore \
+          -storepass "EdenSecure2026!" \
+          -keypass "EdenSecure2026!" \
+          app-mainline-release-unsigned.apk eden_key
+
+        # Align APK
+        zipalign -v 4 app-mainline-release-unsigned.apk app-mainline-release-signed.apk
 
     - name: Rename APK
       run: |
@@ -99,17 +92,26 @@ jobs:
       with:
         files: eden-sx2a-v*.apk
         body: |
-          ## Eden SX2A Release
+          ## 🎮 Eden SX2A v${{ github.ref_name }}
 
-          ### Changes
+          ### ✨ What's New
           - Fixed loose ExeFS game detection
-          - Improved game folder scanning
+          - Direct detection of exefs/main folders
+          - Improved recursive folder scanning
 
-          ### Installation
-          1. Download the APK
-          2. Install on Android 13+ device
-          3. Grant All Files Access
+          ### 📦 Installation
+          1. Download `eden-sx2a-v*.apk`
+          2. Install on Android 13+ device (16GB RAM recommended)
+          3. Grant All Files Access when prompted
+          4. Add your game folders in Settings
 
-          Built from commit: ${{ github.sha }}
+          ### 🔧 Technical Details
+          - Built with GitHub Actions + ccache
+          - Signed with RSA 4096
+          - Based on PokeDinner 2.0.0
+
+          Built from: `${{ github.sha }}`
+
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
