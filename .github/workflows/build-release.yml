@@ -1,0 +1,108 @@
+name: Build Release APK
+
+on:
+  push:
+    tags:
+      - 'nx2-android-v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '21'
+        cache: 'gradle'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Install CMake
+      run: |
+        echo "y" | sdkmanager "cmake;4.1.0"
+
+    - name: Accept licenses
+      run: |
+        yes | sdkmanager --licenses || true
+
+    - name: Make gradlew executable
+      run: chmod +x src/android/gradlew
+
+    - name: Build Release APK
+      working-directory: src/android
+      run: |
+        ./gradlew assembleRelease --no-daemon --stacktrace
+      env:
+        ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_LATEST_HOME }}
+
+    - name: Sign APK
+      working-directory: src/android/app/build/outputs/apk/mainline/release
+      run: |
+        # Generate keystore
+        keytool -genkey -v -keystore release.keystore \
+          -alias eden_key -keyalg RSA -keysize 4096 -validity 10000 \
+          -storepass ${{ secrets.KEYSTORE_PASSWORD || 'EdenSecure2026!' }} \
+          -keypass ${{ secrets.KEY_PASSWORD || 'EdenSecure2026!' }} \
+          -dname "CN=Eden SX2A, OU=Development, O=Eden Project, L=Madrid, ST=Madrid, C=ES"
+
+        # Sign APK
+        $ANDROID_HOME/build-tools/*/apksigner sign \
+          --ks release.keystore \
+          --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD || 'EdenSecure2026!' }} \
+          --key-pass pass:${{ secrets.KEY_PASSWORD || 'EdenSecure2026!' }} \
+          --ks-key-alias eden_key \
+          --out app-mainline-release-signed.apk \
+          app-mainline-release-unsigned.apk || \
+        java -jar $ANDROID_HOME/build-tools/*/lib/apksigner.jar sign \
+          --ks release.keystore \
+          --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD || 'EdenSecure2026!' }} \
+          --key-pass pass:${{ secrets.KEY_PASSWORD || 'EdenSecure2026!' }} \
+          --ks-key-alias eden_key \
+          --out app-mainline-release-signed.apk \
+          app-mainline-release-unsigned.apk
+
+    - name: Rename APK
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/nx2-android-v}
+        if [ -z "$VERSION" ]; then VERSION="dev"; fi
+        cp src/android/app/build/outputs/apk/mainline/release/app-mainline-release-signed.apk \
+           eden-sx2a-v${VERSION}.apk
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: eden-sx2a-release
+        path: eden-sx2a-v*.apk
+        retention-days: 30
+
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: eden-sx2a-v*.apk
+        body: |
+          ## Eden SX2A Release
+
+          ### Changes
+          - Fixed loose ExeFS game detection
+          - Improved game folder scanning
+
+          ### Installation
+          1. Download the APK
+          2. Install on Android 13+ device
+          3. Grant All Files Access
+
+          Built from commit: ${{ github.sha }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
