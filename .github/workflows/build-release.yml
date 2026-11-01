@@ -41,10 +41,16 @@ jobs:
       run: chmod +x src/android/gradlew
 
     - name: Decode and setup keystore
+      env:
+        KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
       run: |
-        mkdir -p ~/.android
-        echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > ~/.android/release.keystore
-        echo "ANDROID_KEYSTORE_FILE=$HOME/.android/release.keystore" >> $GITHUB_ENV
+        if [ -n "$KS_B64" ]; then
+          mkdir -p ~/.android
+          echo "$KS_B64" | base64 -d > ~/.android/release.keystore
+          echo "ANDROID_KEYSTORE_FILE=$HOME/.android/release.keystore" >> $GITHUB_ENV
+        else
+          echo "No keystore secret, using the default debug key"
+        fi
 
     - name: Build Release APK
       working-directory: src/android
