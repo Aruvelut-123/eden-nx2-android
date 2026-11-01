@@ -103,8 +103,8 @@ Tested on one phone (Snapdragon SM8850, 16 GB RAM).
 
 | Game | Works? |
 | --- | --- |
-| Pokémon Pokopia (update 327680) | ✅ **Playable**, faster than v0.2 and with the right colours. First start is slow |
-| Donkey Kong Bananza (update 458752) | ✅ **Playable**, but the FPS drops hard in some places. Slow loading |
+| Pokémon Pokopia (update 327680) | ✅ **Playable**, about 20-30 FPS with the right colours. First start is slow |
+| Donkey Kong Bananza (update 458752) | ⚠️ **Runs slowly**, about 10 FPS, lower in some places. Slow loading |
 | Mario Kart World (1.0.0, no update) | ⚠️ **In game, with black textures** |
 | Nintendo Switch 2 Welcome Tour | ❓ Not tested on this version |
 | Other games | ❓ Not tested. Tell us how they run |
@@ -145,7 +145,7 @@ the logs. Do it right after the problem, before you start a game again.
 ## Known problems
 
 - This version is new. Expect bugs.
-- Games run slowly (low FPS), and Donkey Kong Bananza drops hard in some places.
+- Games run slowly (low FPS). Donkey Kong Bananza runs at about 10 FPS.
 - Mario Kart World has black textures.
 - The first start of a game is slow. Later starts are faster.
 - The phone's own graphics driver (not the bundled one) misses some graphics. Use the bundled driver.
