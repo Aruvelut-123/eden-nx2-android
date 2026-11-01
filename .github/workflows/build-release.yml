@@ -72,8 +72,11 @@ jobs:
 
     - name: Rename APK
       run: |
-        VERSION=${GITHUB_REF#refs/tags/nx2-android-v}
-        if [ -z "$VERSION" ]; then VERSION="dev"; fi
+        if [[ "$GITHUB_REF" == refs/tags/nx2-android-v* ]]; then
+          VERSION="${GITHUB_REF#refs/tags/nx2-android-v}"
+        else
+          VERSION="dev"
+        fi
         APK_SOURCE="src/android/app/build/outputs/apk/mainline/release/app-mainline-release.apk"
         APK_DEST="eden-sx2a-v${VERSION}.apk"
         cp "$APK_SOURCE" "$APK_DEST"
@@ -91,27 +94,5 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: eden-sx2a-v*.apk
-        body: |
-          ## 🎮 Eden SX2A v${{ github.ref_name }}
-
-          ### ✨ What's New
-          - Fixed loose ExeFS game detection
-          - Direct detection of exefs/main folders
-          - Improved recursive folder scanning
-
-          ### 📦 Installation
-          1. Download `eden-sx2a-v*.apk`
-          2. Install on Android 13+ device (16GB RAM recommended)
-          3. Grant All Files Access when prompted
-          4. Add your game folders in Settings
-
-          ### 🔧 Technical Details
-          - Built with GitHub Actions + ccache
-          - Signed with RSA 4096
-          - Based on PokeDinner 2.0.0
-
-          Built from: `${{ github.sha }}`
-
-          🤖 Generated with [Claude Code](https://claude.com/claude-code)
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
