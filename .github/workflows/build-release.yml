@@ -31,9 +31,14 @@ jobs:
         echo "ANDROID_NDK: $ANDROID_NDK"
         ls -la $ANDROID_HOME/ndk/ || echo "NDK not in default location"
 
-    - name: Install CMake
+    - name: Install build dependencies
       run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y glslang-tools
         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "cmake;4.1.0" || true
+
+    - name: Verify glslangValidator
+      run: which glslangValidator && glslangValidator --version
 
     - name: Make gradlew executable
       run: chmod +x src/android/gradlew
