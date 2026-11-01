@@ -88,11 +88,3 @@ jobs:
         name: eden-sx2a-release
         path: eden-sx2a-v*.apk
         retention-days: 30
-
-    - name: Create Release
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v2
-      with:
-        files: eden-sx2a-v*.apk
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
