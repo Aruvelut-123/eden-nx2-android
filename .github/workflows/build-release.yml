@@ -25,16 +25,15 @@ jobs:
         java-version: '21'
         cache: 'gradle'
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
+    - name: Setup Android SDK (already installed)
+      run: |
+        echo "ANDROID_HOME: $ANDROID_HOME"
+        echo "ANDROID_NDK: $ANDROID_NDK"
+        ls -la $ANDROID_HOME/ndk/ || echo "NDK not in default location"
 
     - name: Install CMake
       run: |
-        echo "y" | sdkmanager "cmake;4.1.0"
-
-    - name: Accept licenses
-      run: |
-        yes | sdkmanager --licenses || true
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "cmake;4.1.0" || true
 
     - name: Make gradlew executable
       run: chmod +x src/android/gradlew
