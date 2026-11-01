@@ -4,6 +4,7 @@
 package org.yuzu.yuzu_emu.utils
 
 import androidx.preference.PreferenceManager
+import java.io.File
 import java.io.IOException
 import org.yuzu.yuzu_emu.NativeLibrary
 import org.yuzu.yuzu_emu.YuzuApplication
@@ -23,6 +24,7 @@ object DirectoryInitialization {
     fun start() {
         if (!areDirectoriesReady) {
             initializeInternalStorage()
+            extractPostShaders()
             NativeConfig.initializeGlobalConfig()
             NativeLibrary.initializeSystem(false)
             NativeLibrary.reloadProfiles()
@@ -42,6 +44,41 @@ object DirectoryInitialization {
             userPath = YuzuApplication.appContext.getExternalFilesDir(null)!!.canonicalPath
             NativeLibrary.setAppDirectory(userPath!!)
         } catch (e: IOException) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun extractPostShaders() {
+        try {
+            val context = YuzuApplication.appContext
+            val destDir = File(userPath, "post_shaders")
+
+            // Create post_shaders directory if it doesn't exist
+            if (!destDir.exists()) {
+                destDir.mkdirs()
+            }
+
+            // List all shader files in assets
+            val assetManager = context.assets
+            val shaderFiles = assetManager.list("post_shaders") ?: return
+
+            // Extract each shader file
+            for (filename in shaderFiles) {
+                val destFile = File(destDir, filename)
+
+                // Skip if file already exists to avoid overwriting user modifications
+                if (destFile.exists()) {
+                    continue
+                }
+
+                // Copy from assets to user directory
+                assetManager.open("post_shaders/$filename").use { input ->
+                    destFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+            }
+        } catch (e: Exception) {
             e.printStackTrace()
         }
     }
