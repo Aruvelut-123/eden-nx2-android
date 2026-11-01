@@ -1513,7 +1513,7 @@ inline LoweredProgram LowerToMaxwell(std::span<const Instruction> code) {
                 if (target != 255)
                     emit(0x5c98000000000000ULL | predicate | target | (u64{15} << 39) | (u64{250 + i} << 20));
             }
-            break;
+            break;                                    
         }
         case 0xb63: { // TLD4 (gather), 2D without offsets or depth compare; component at bits 87-88.
             const u32 mask = insn.Bits(72, 4), second_dest = insn.Bits(64, 8);
@@ -2053,7 +2053,7 @@ inline LoweredProgram LowerToMaxwell(std::span<const Instruction> code) {
                  (u64{insn.Bits(74, 2)} << 47) | (u64{insn.Bits(71, 1)} << 49));
             break;
         }
-        case 0x20b: case 0x80b: case 0xa0b: // FSETP
+        case 0x20b: case 0x80b: case 0xa0b: case 0xc0b: // FSETP
         case 0x20c: case 0x80c: case 0xa0c: case 0xc0c: { // ISETP
             const bool floating = (opcode & 0x1ff) == 0xb;
             if (!floating && insn.Bits(72, 1)) return fail(index, "native extended integer comparison");
