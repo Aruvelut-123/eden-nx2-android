@@ -40,6 +40,12 @@ jobs:
     - name: Make gradlew executable
       run: chmod +x src/android/gradlew
 
+    - name: Decode and setup keystore
+      run: |
+        mkdir -p ~/.android
+        echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > ~/.android/release.keystore
+        echo "ANDROID_KEYSTORE_FILE=$HOME/.android/release.keystore" >> $GITHUB_ENV
+
     - name: Build Release APK
       working-directory: src/android
       run: |
@@ -51,33 +57,27 @@ jobs:
         ANDROID_NDK: /usr/local/lib/android/sdk/ndk/27.0.12077973
         CMAKE_C_COMPILER_LAUNCHER: ccache
         CMAKE_CXX_COMPILER_LAUNCHER: ccache
+        ANDROID_KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+        ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
 
-    - name: Sign APK with jarsigner
-      working-directory: src/android/app/build/outputs/apk/mainline/release
+    - name: Verify APK was built
       run: |
-        # Generate keystore
-        keytool -genkey -v -keystore release.keystore \
-          -alias eden_key -keyalg RSA -keysize 4096 -validity 10000 \
-          -storepass "EdenSecure2026!" \
-          -keypass "EdenSecure2026!" \
-          -dname "CN=Eden SX2A, OU=Development, O=Eden Project, L=Madrid, ST=Madrid, C=ES"
-
-        # Sign with jarsigner (more reliable)
-        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-          -keystore release.keystore \
-          -storepass "EdenSecure2026!" \
-          -keypass "EdenSecure2026!" \
-          app-mainline-release-unsigned.apk eden_key
-
-        # Align APK
-        zipalign -v 4 app-mainline-release-unsigned.apk app-mainline-release-signed.apk
+        APK_PATH="src/android/app/build/outputs/apk/mainline/release/app-mainline-release.apk"
+        if [ ! -f "$APK_PATH" ]; then
+          echo "ERROR: APK not found at $APK_PATH"
+          ls -la src/android/app/build/outputs/apk/mainline/release/ || echo "Directory does not exist"
+          exit 1
+        fi
+        echo "APK found: $(ls -lh $APK_PATH)"
 
     - name: Rename APK
       run: |
         VERSION=${GITHUB_REF#refs/tags/nx2-android-v}
         if [ -z "$VERSION" ]; then VERSION="dev"; fi
-        cp src/android/app/build/outputs/apk/mainline/release/app-mainline-release-signed.apk \
-           eden-sx2a-v${VERSION}.apk
+        APK_SOURCE="src/android/app/build/outputs/apk/mainline/release/app-mainline-release.apk"
+        APK_DEST="eden-sx2a-v${VERSION}.apk"
+        cp "$APK_SOURCE" "$APK_DEST"
+        echo "APK renamed to: $(ls -lh $APK_DEST)"
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
