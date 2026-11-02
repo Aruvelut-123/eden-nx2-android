@@ -24,7 +24,7 @@ inline std::atomic<bool> g_nx2_ampere{false};
 inline std::atomic<u64> g_nx2_program_id{0};
 
 /// Parses a switch that is on unless NAME=0. Callers cache the result and also check
-/// g_nx2_ampere, so Switch 1 programs never see it on.
+// g_nx2_ampere, so Switch 1 programs never see it on.
 [[nodiscard]] inline bool Nx2EnvDefaultOn(const char* name) {
     const char* value = std::getenv(name);
     return value == nullptr || value[0] != '0';
@@ -36,10 +36,16 @@ inline std::atomic<u64> g_nx2_program_id{0};
 // Pokopia: with the copy-back off its sky is black or flickers. Open work: find what reads it,
 // then the list goes.
 inline bool Nx2NeedsBufferDownloads() {
-    switch (g_nx2_program_id.load(std::memory_order_relaxed)) {
-    case 0x0400A3A01EE4C000ULL:
+    const u64 pid = g_nx2_program_id.load(std::memory_order_relaxed);
+    switch (pid) {
+    case 0x0400A3A01EE4C000ULL: // Pokemon Pokopia base title
+    case 0x0400A3A01EE4C800ULL: // Pokemon Pokopia update title
         return true;
     default:
+        // Match both base and update variants for Pokopia
+        if ((pid & 0xFFFFFFFFFFFFF000ULL) == 0x0400A3A01EE4C000ULL) {
+            return true;
+        }
         return false;
     }
 }
