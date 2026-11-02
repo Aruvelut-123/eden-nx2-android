@@ -534,15 +534,17 @@ private:
     /// instead of ~5 and draw setup ~7% less. The titles that do read those pages back are listed
     /// in Nx2NeedsBufferDownloads (nx2.h). EDEN_NX2_BUFFER_DOWNLOADS=0/1 overrides both.
     bool AsyncBufferDownloads() const {
-        static const int forced = [] {
-            const char* value = std::getenv("EDEN_NX2_BUFFER_DOWNLOADS");
-            return value == nullptr ? -1 : (value[0] == '0' ? 0 : 1);
-        }();
-        if (forced >= 0) {
-            return forced == 1;
-        }
-        return gpu_memory == nullptr || !gpu_memory->UsesNativeTiling() ||
-               Tegra::Nx2NeedsBufferDownloads();
+    static const int forced = [] {
+        const char* value = std::getenv("EDEN_NX2_BUFFER_DOWNLOADS");
+        return value == nullptr ? -1 : (value[0] == '0' ? 0 : 1);
+    }();
+    if (forced >= 0) {
+        return forced == 1;
+    }
+    if (Tegra::Nx2NeedsBufferDownloads()) {
+        return true;
+    }
+    return gpu_memory == nullptr || !gpu_memory->UsesNativeTiling();
     }
     Common::RangeSet<DAddr> gpu_modified_ranges;
     std::deque<Common::RangeSet<DAddr>> committed_gpu_modified_ranges;
