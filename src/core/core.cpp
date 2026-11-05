@@ -142,9 +142,9 @@ bool IsSwitch2Container(const FileSys::VirtualFile& file) {
     }
     if (extension == "xci" || extension == "xcz") {
         FileSys::XCI xci{file};
-        if (xci.GetStatus() == ResultStatus::Success) {
+        if (xci.GetStatus() == Loader::ResultStatus::Success) {
             if (const auto secure = xci.GetSecurePartitionNSP();
-                secure != nullptr && secure->GetStatus() == ResultStatus::Success &&
+                secure != nullptr && secure->GetStatus() == Loader::ResultStatus::Success &&
                 IsSwitch2Metadata(secure->GetExeFS() != nullptr
                                       ? secure->GetExeFS()->GetFile("main.npdm")
                                       : nullptr)) {
@@ -153,7 +153,7 @@ bool IsSwitch2Container(const FileSys::VirtualFile& file) {
         }
     }
     FileSys::NSP nsp{file};
-    if (nsp.GetStatus() != ResultStatus::Success) {
+    if (nsp.GetStatus() != Loader::ResultStatus::Success) {
         return false;
     }
     if (const auto exefs = nsp.GetExeFS(); exefs != nullptr) {
@@ -161,7 +161,7 @@ bool IsSwitch2Container(const FileSys::VirtualFile& file) {
     }
     const auto program_nca = nsp.GetNCA(FileSys::GetBaseTitleID(nsp.GetProgramTitleID()),
                                         FileSys::ContentRecordType::Program);
-    if (program_nca == nullptr || program_nca->GetStatus() != ResultStatus::Success) {
+    if (program_nca == nullptr || program_nca->GetStatus() != Loader::ResultStatus::Success) {
         return false;
     }
     const auto program_exefs = program_nca->GetExeFS();
