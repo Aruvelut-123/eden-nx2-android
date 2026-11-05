@@ -24,12 +24,17 @@
 #include "core/cpu_manager.h"
 #include "core/debugger/debugger.h"
 #include "core/device_memory.h"
+#include "core/file_sys/card_image.h"
+#include "core/file_sys/common_funcs.h"
+#include "core/file_sys/content_archive.h"
+#include "core/file_sys/nca_metadata.h"
 #include "core/file_sys/fs_filesystem.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/program_metadata.h"
 #include "core/file_sys/registered_cache.h"
 #include "core/file_sys/romfs_factory.h"
 #include "core/file_sys/savedata_factory.h"
+#include "core/file_sys/submission_package.h"
 #include "core/file_sys/vfs/vfs_concat.h"
 #include "core/file_sys/vfs/vfs_real.h"
 #include "core/gpu_dirty_memory_manager.h"
@@ -113,17 +118,69 @@ FileSys::VirtualFile GetGameFileFromPath(const FileSys::VirtualFilesystem& vfs,
 }
 
 namespace {
-
 // Switch 2 titles boot as a loose ExeFS, with main.npdm next to main.
-bool IsSwitch2Program(const FileSys::VirtualFile& file) {
-    const auto dir = file != nullptr ? file->GetContainingDirectory() : nullptr;
-    const auto npdm = dir != nullptr ? dir->GetFile("main.npdm") : nullptr;
+bool IsSwitch2Metadata(const FileSys::VirtualFile& npdm) {
     FileSys::ProgramMetadata metadata;
     return npdm != nullptr && metadata.Load(npdm) == Loader::ResultStatus::Success &&
            metadata.IsSwitch2();
 }
 
+// A container (NSP/NSZ/XCI/XCZ) keeps its NPDM inside the Program NCA's ExeFS. Releases made
+// by NSP Box are plaintext, so the NCA can be opened without any key file.
+bool IsSwitch2Container(const FileSys::VirtualFile& file) {
+    if (file == nullptr) {
+        return false;
+    }
+    const auto name = file->GetName();
+    const auto dot = name.find_last_of('.');
+    const auto extension =
+        dot == std::string::npos ? std::string{} : Common::ToLower(name.substr(dot + 1));
+    const bool is_container = extension == "nsp" || extension == "nsz" ||
+                              extension == "xci" || extension == "xcz";
+    if (!is_container) {
+        return false;
+    }
+    if (extension == "xci" || extension == "xcz") {
+        FileSys::XCI xci{file};
+        if (xci.GetStatus() == ResultStatus::Success) {
+            if (const auto secure = xci.GetSecurePartitionNSP();
+                secure != nullptr && secure->GetStatus() == ResultStatus::Success &&
+                IsSwitch2Metadata(secure->GetExeFS() != nullptr
+                                      ? secure->GetExeFS()->GetFile("main.npdm")
+                                      : nullptr)) {
+                return true;
+            }
+        }
+    }
+    FileSys::NSP nsp{file};
+    if (nsp.GetStatus() != ResultStatus::Success) {
+        return false;
+    }
+    if (const auto exefs = nsp.GetExeFS(); exefs != nullptr) {
+        return IsSwitch2Metadata(exefs->GetFile("main.npdm"));
+    }
+    const auto program_nca = nsp.GetNCA(FileSys::GetBaseTitleID(nsp.GetProgramTitleID()),
+                                        FileSys::ContentRecordType::Program);
+    if (program_nca == nullptr || program_nca->GetStatus() != ResultStatus::Success) {
+        return false;
+    }
+    const auto program_exefs = program_nca->GetExeFS();
+    return IsSwitch2Metadata(program_exefs != nullptr ? program_exefs->GetFile("main.npdm")
+                                                      : nullptr);
+}
+
 } // namespace
+
+bool IsSwitch2Title(const FileSys::VirtualFile& file) {
+    if (file == nullptr) {
+        return false;
+    }
+    const auto dir = file->GetContainingDirectory();
+    if (IsSwitch2Metadata(dir != nullptr ? dir->GetFile("main.npdm") : nullptr)) {
+        return true;
+    }
+    return IsSwitch2Container(file);
+}
 
 struct System::Impl {
     explicit Impl(System& system)
@@ -317,7 +374,7 @@ struct System::Impl {
 
         const bool switch2_program =
             virtual_filesystem != nullptr &&
-            IsSwitch2Program(GetGameFileFromPath(virtual_filesystem, filepath));
+            IsSwitch2Title(GetGameFileFromPath(virtual_filesystem, filepath));
 
         // Switch 2 titles size their heap from the total memory and need the 12 GiB layout. Set it
         // as a per-game value, so RestoreGlobalState brings back the configured layout afterwards.

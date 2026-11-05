@@ -132,6 +132,11 @@ struct PerfStatsResults;
 
 FileSys::VirtualFile GetGameFileFromPath(const FileSys::VirtualFilesystem& vfs,
                                          const std::string& path);
+/// True when the title is a Switch 2 program. Looks at a loose ExeFS (main.npdm beside
+/// main) and, for containers, at the Program NCA's ExeFS so NSP/XCI packages are detected
+/// without needing a key file. Used both to pick the boot configuration and to label the
+/// game list.
+bool IsSwitch2Title(const FileSys::VirtualFile& file);
 
 /// Enumeration representing the return values of the System Initialize and Load process.
 enum class SystemResultStatus : u32 {

@@ -154,13 +154,28 @@ class GameAdapter(private val activity: AppCompatActivity) :
             }
         }
 
+        // The list labels each entry with its platform so a Switch 2 title is obvious
+        // before launching it. Only used for display: Game.title stays untouched.
+        private fun displayTitle(model: Game): String {
+            val clean = model.title.replace("[\\t\\n\\r]+".toRegex(), " ")
+            if (!model.isSwitch2 && model.programId.isEmpty()) {
+                return clean
+            }
+            val context = binding.root.context
+            val badge = context.getString(
+                if (model.isSwitch2) R.string.platform_switch2_badge
+                else R.string.platform_switch1_badge
+            )
+            return context.getString(R.string.game_title_with_platform, badge, clean)
+        }
+
         private fun bindListView(model: Game) {
             val listBinding = binding as CardGameListBinding
 
             listBinding.imageGameScreen.scaleType = ImageView.ScaleType.CENTER_CROP
             GameIconUtils.loadGameIcon(model, listBinding.imageGameScreen)
 
-            listBinding.textGameTitle.text = model.title.replace("[\\t\\n\\r]+".toRegex(), " ")
+            listBinding.textGameTitle.text = displayTitle(model)
             listBinding.textGameDeveloper.text = model.developer
 
             listBinding.textGameTitle.marquee()
@@ -178,7 +193,7 @@ class GameAdapter(private val activity: AppCompatActivity) :
             gridBinding.imageGameScreen.scaleType = ImageView.ScaleType.CENTER_CROP
             GameIconUtils.loadGameIcon(model, gridBinding.imageGameScreen)
 
-            gridBinding.textGameTitle.text = model.title.replace("[\\t\\n\\r]+".toRegex(), " ")
+            gridBinding.textGameTitle.text = displayTitle(model)
 
             gridBinding.textGameTitle.marquee()
             gridBinding.cardGameGrid.setOnClickListener { onClick(model) }
@@ -195,7 +210,7 @@ class GameAdapter(private val activity: AppCompatActivity) :
             gridCompactBinding.imageGameScreenCompact.scaleType = ImageView.ScaleType.CENTER_CROP
             GameIconUtils.loadGameIcon(model, gridCompactBinding.imageGameScreenCompact)
 
-            gridCompactBinding.textGameTitleCompact.text = model.title.replace("[\\t\\n\\r]+".toRegex(), " ")
+            gridCompactBinding.textGameTitleCompact.text = displayTitle(model)
 
             gridCompactBinding.textGameTitleCompact.marquee()
             gridCompactBinding.cardGameGridCompact.setOnClickListener { onClick(model) }
@@ -212,7 +227,7 @@ class GameAdapter(private val activity: AppCompatActivity) :
             carouselBinding.imageGameScreen.scaleType = ImageView.ScaleType.CENTER_CROP
             GameIconUtils.loadGameIcon(model, carouselBinding.imageGameScreen)
 
-            carouselBinding.textGameTitle.text = model.title.replace("[\\t\\n\\r]+".toRegex(), " ")
+            carouselBinding.textGameTitle.text = displayTitle(model)
             carouselBinding.textGameTitle.marquee()
             carouselBinding.cardGameCarousel.setOnClickListener { onClick(model) }
             carouselBinding.cardGameCarousel.setOnLongClickListener { onLongClick(model) }

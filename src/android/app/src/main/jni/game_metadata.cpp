@@ -19,6 +19,7 @@ struct RomMetadata {
     std::string version;
     std::vector<u8> icon;
     bool isHomebrew;
+    bool isSwitch2;
 };
 static ::Common::unordered_map<std::string, RomMetadata> m_rom_metadata_cache;
 
@@ -54,6 +55,7 @@ static RomMetadata CacheRomMetadata(const std::string& path) {
         } else {
             entry.isHomebrew = false;
         }
+        entry.isSwitch2 = Core::IsSwitch2Title(file);
         m_rom_metadata_cache[path] = entry;
         return entry;
     }
@@ -112,6 +114,9 @@ jbyteArray Java_org_yuzu_yuzu_1emu_utils_GameMetadata_getIcon(JNIEnv* env, jobje
 
 jboolean Java_org_yuzu_yuzu_1emu_utils_GameMetadata_getIsHomebrew(JNIEnv* env, jobject obj, jstring jpath) {
     return jboolean(GetRomMetadata(Common::Android::GetJString(env, jpath)).isHomebrew);
+}
+jboolean Java_org_yuzu_yuzu_1emu_utils_GameMetadata_getIsSwitch2(JNIEnv* env, jobject obj, jstring jpath) {
+    return jboolean(GetRomMetadata(Common::Android::GetJString(env, jpath)).isSwitch2);
 }
 
 void Java_org_yuzu_yuzu_1emu_utils_GameMetadata_resetMetadata(JNIEnv* env, jobject obj) {

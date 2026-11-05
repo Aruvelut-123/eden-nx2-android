@@ -468,6 +468,10 @@
     <!-- Switch 2 readiness check strings -->
     <string name="switch2_readiness">Switch 2 readiness check</string>
     <string name="switch2_readiness_description">Checks this device and your settings for running Switch 2 games</string>
+    <!-- Game list platform badges -->
+    <string name="platform_switch2_badge">NS2</string>
+    <string name="platform_switch1_badge">NS1</string>
+    <string name="game_title_with_platform">[%1$s] %2$s</string>
     <string name="readiness_run_again">Run again</string>
     <string name="readiness_running">Running checks…</string>
     <string name="readiness_summary">%1$d passed, %2$d warnings, %3$d failed</string>

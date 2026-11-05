@@ -529,7 +529,8 @@ object GameHelper {
             programId,
             GameMetadata.getDeveloper(filePath),
             GameMetadata.getVersion(filePath, false),
-            GameMetadata.getIsHomebrew(filePath)
+            GameMetadata.getIsHomebrew(filePath),
+            GameMetadata.getIsSwitch2(filePath)
         )
 
         if (addedToLibrary) {

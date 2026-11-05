@@ -18,5 +18,8 @@ object GameMetadata {
 
     external fun getIsHomebrew(path: String): Boolean
 
+    // True when the file is a Switch 2 program (NSP-Box packages included).
+    external fun getIsSwitch2(path: String): Boolean
+
     external fun resetMetadata()
 }

@@ -33,7 +33,8 @@ class Game(
     val programId: String = "",
     val developer: String = "",
     var version: String = "",
-    val isHomebrew: Boolean = false
+    val isHomebrew: Boolean = false,
+    val isSwitch2: Boolean = false
 ) : Parcelable {
     val keyAddedToLibraryTime get() = "${path}_AddedToLibraryTime"
     val keyLastPlayedTime get() = "${path}_LastPlayed"
@@ -102,7 +103,7 @@ class Game(
         if (developer != other.developer) return false
         if (version != other.version) return false
         if (isHomebrew != other.isHomebrew) return false
-
+        if (isSwitch2 != other.isSwitch2) return false
         return true
     }
 
@@ -113,6 +114,7 @@ class Game(
         result = 31 * result + developer.hashCode()
         result = 31 * result + version.hashCode()
         result = 31 * result + isHomebrew.hashCode()
+        result = 31 * result + isSwitch2.hashCode()
         return result
     }
 
