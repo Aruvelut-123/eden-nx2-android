@@ -36,6 +36,7 @@ static jfieldID s_game_program_id_field;
 static jfieldID s_game_developer_field;
 static jfieldID s_game_version_field;
 static jfieldID s_game_is_homebrew_field;
+static jfieldID s_game_is_switch2_field;
 
 static jclass s_string_class;
 static jclass s_pair_class;
@@ -204,6 +205,9 @@ namespace Common::Android {
 
     jfieldID GetGameIsHomebrewField() {
         return s_game_is_homebrew_field;
+    }
+    jfieldID GetGameIsSwitch2Field() {
+        return s_game_is_switch2_field;
     }
 
     jclass GetStringClass() {
@@ -506,13 +510,14 @@ void Initialize(JavaVM* vm, JNIEnv *env) {
     s_game_class = reinterpret_cast<jclass>(env->NewGlobalRef(game_class));
     s_game_constructor = env->GetMethodID(game_class, "<init>",
                                           "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/"
-                                          "String;Ljava/lang/String;Ljava/lang/String;Z)V");
+                                          "String;Ljava/lang/String;Ljava/lang/String;ZZ)V");
     s_game_title_field = env->GetFieldID(game_class, "title", "Ljava/lang/String;");
     s_game_path_field = env->GetFieldID(game_class, "path", "Ljava/lang/String;");
     s_game_program_id_field = env->GetFieldID(game_class, "programId", "Ljava/lang/String;");
     s_game_developer_field = env->GetFieldID(game_class, "developer", "Ljava/lang/String;");
     s_game_version_field = env->GetFieldID(game_class, "version", "Ljava/lang/String;");
     s_game_is_homebrew_field = env->GetFieldID(game_class, "isHomebrew", "Z");
+    s_game_is_switch2_field = env->GetFieldID(game_class, "isSwitch2", "Z");
     env->DeleteLocalRef(game_class);
 
     const jclass string_class = env->FindClass("java/lang/String");

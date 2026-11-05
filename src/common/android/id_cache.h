@@ -54,6 +54,7 @@ jfieldID GetGameProgramIdField();
 jfieldID GetGameDeveloperField();
 jfieldID GetGameVersionField();
 jfieldID GetGameIsHomebrewField();
+jfieldID GetGameIsSwitch2Field();
 
 jclass GetStringClass();
 jclass GetPairClass();
